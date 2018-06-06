@@ -1,0 +1,7 @@
+node_modules
+.vscode
+build
+test
+index-old.cpp
+Source.cpp
+test.js

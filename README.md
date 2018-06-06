@@ -1,3 +1,17 @@
+# node-hca-decoder
+
+## Usage
+``` js
+const hcaDecoder = require('.')
+let hca = new hcaDecoder.HCADecoder(/* ciphKey1, ciphKey2 */)
+let filenameHCA = 'path/to/somefile.hca'
+hca.decodeToWaveFileSync(filenameHCA/* , filenameWAV, volume, mode, loop */)
+hca.decrypt(filenameHCA)
+hca.printInfo(filenameHCA)
+```
+
+------------------------------------
+
 # HCAデコーダ
 
 # HCAファイルのデコード方法

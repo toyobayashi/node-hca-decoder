@@ -1,0 +1,28 @@
+{
+  "name": "hca-decoder",
+  "version": "1.0.0-pre",
+  "description": "HCA Decoder",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test",
+    "install": "node-gyp rebuild",
+    "build": "node-gyp rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toyobayashi/node-hca-decoder.git"
+  },
+  "keywords": [
+    "hca"
+  ],
+  "author": "toyobayashi",
+  "license": "MIT",
+  "gypfile": true,
+  "bugs": {
+    "url": "https://github.com/toyobayashi/node-hca-decoder/issues"
+  },
+  "homepage": "https://github.com/toyobayashi/node-hca-decoder#readme",
+  "devDependencies": {
+    "node-gyp": "^3.6.2"
+  }
+}
