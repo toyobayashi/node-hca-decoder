@@ -1,101 +1,101 @@
 #pragma once
 
 //--------------------------------------------------
-// HCA(High Compression Audio)クラス
+// HCA(High Compression Audio) Class
 //--------------------------------------------------
 class clHCA {
 public:
 	clHCA(unsigned int ciphKey1 = 0xE0748978, unsigned int ciphKey2 = 0xCF222F1F);
 
-	// HCAチェック
+	// HCA Check
 	static bool CheckFile(void *data, unsigned int size);
 
-	// チェックサム
+	// CheckSum
 	static unsigned short CheckSum(void *data, int size, unsigned short sum = 0);
 
-	// ヘッダ情報をコンソール出力
+	// Print header information
 	bool PrintInfo(const char *filenameHCA);
 
-	// 復号化
+	// Decrypt
 	bool Decrypt(const char *filenameHCA);
 
-	// デコードしてWAVEファイルに保存
+	// Decode to WAV file
 	bool DecodeToWavefile(const char *filenameHCA, const char *filenameWAV, float volume = 1, int mode = 16, int loop = 0);
 	bool DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float volume = 1, int mode = 16, int loop = 0);
 
-	// エンコードしてHCAファイルに保存
+	// Encode to HCA file
 	//bool EncodeFromWavefile(const char *filenameWAV,const char *filenameHCA,float volume=1);
 	//bool EncodeFromWavefileStream(void *fpWAV,const char *filenameHCA,float volume=1);
 
 private:
-	struct stHeader {//ファイル情報 (必須)
+	struct stHeader { // file information (required)
 		unsigned int hca;              // 'HCA'
-		unsigned short version;        // バージョン。v1.3とv2.0の存在を確認
-		unsigned short dataOffset;     // データオフセット
+		unsigned short version;        // Version (1.3 or 2.0)
+		unsigned short dataOffset;     // data offset
 	};
-	struct stFormat {//フォーマット情報 (必須)
+	struct stFormat { // format information (required)
 		unsigned int fmt;              // 'fmt'
-		unsigned int channelCount : 8;   // チャンネル数 1~16
-		unsigned int samplingRate : 24;  // サンプリングレート 1~0x7FFFFF
-		unsigned int blockCount;       // ブロック数 0以上
-		unsigned short muteHeader;     // 先頭の無音部分(ブロック数*0x400+0x80)
-		unsigned short muteFooter;     // 末尾の無音サンプル数
+		unsigned int channelCount : 8;   // chanel count 1~16
+		unsigned int samplingRate : 24;  // sampling rate 1~0x7FFFFF
+		unsigned int blockCount;       // block count >0
+		unsigned short muteHeader;     // header no sound part (blockCount * 0x400 + 0x80)
+		unsigned short muteFooter;     // footer no sound sample
 	};
-	struct stCompress {//圧縮情報 (圧縮情報かデコード情報のどちらか一つが必須)
+	struct stCompress { // compress information (require this or decode information)
 		unsigned int comp;             // 'comp'
-		unsigned short blockSize;      // ブロックサイズ(CBRのときに有効？) 8~0xFFFF、0のときはVBR
-		unsigned char r01;             // 不明(1) 0~r02      v2.0現在1のみ対応
-		unsigned char r02;             // 不明(15) r01~0x1F  v2.0現在15のみ対応
-		unsigned char r03;             // 不明(1)(1)
-		unsigned char r04;             // 不明(1)(0)
-		unsigned char r05;             // 不明(0x80)(0x80)
-		unsigned char r06;             // 不明(0x80)(0x20)
-		unsigned char r07;             // 不明(0)(0x20)
-		unsigned char r08;             // 不明(0)(8)
-		unsigned char reserve1;        // 予約
-		unsigned char reserve2;        // 予約
+		unsigned short blockSize;      // block size (when CBR available?) 8~0xFFFF, 0 is VBR
+		unsigned char r01;             // unknown(1) 0~r02      v2.0 now 1 only
+		unsigned char r02;             // unknown(15) r01~0x1F  v2.0 now 15 only
+		unsigned char r03;             // unknown(1)(1)
+		unsigned char r04;             // unknown(1)(0)
+		unsigned char r05;             // unknown(0x80)(0x80)
+		unsigned char r06;             // unknown(0x80)(0x20)
+		unsigned char r07;             // unknown(0)(0x20)
+		unsigned char r08;             // unknown(0)(8)
+		unsigned char reserve1;
+		unsigned char reserve2;
 	};
-	struct stDecode {//デコード情報 (圧縮情報かデコード情報のどちらか一つが必須)
+	struct stDecode { // decode information (require this or compress information)
 		unsigned int dec;              // 'dec'
-		unsigned short blockSize;      // ブロックサイズ(CBRのときに有効？) 8~0xFFFF、0のときはVBR
-		unsigned char r01;             // 不明(1) 0~r02      v2.0現在1のみ対応
-		unsigned char r02;             // 不明(15) r01~0x1F  v2.0現在15のみ対応
-		unsigned char count1;          // type0とtype1の数-1
-		unsigned char count2;          // type2の数-1
-		unsigned char r03 : 4;           // 不明(0)
-		unsigned char r04 : 4;           // 不明(0) 0は1に修正される
-		unsigned char enableCount2;    // count2を使うフラグ
+		unsigned short blockSize;      // block size (when CBR available?) 8~0xFFFF, 0 is VBR
+		unsigned char r01;             // unknown(1) 0~r02      v2.0 now 1 only
+		unsigned char r02;             // unknown(15) r01~0x1F  v2.0 now 15 only
+		unsigned char count1;          // type0 and type1 count - 1
+		unsigned char count2;          // type2 count - 1
+		unsigned char r03 : 4;         // unknown(0)
+		unsigned char r04 : 4;         // unknown(0) 0 is corrected to 1
+		unsigned char enableCount2;    // flag of using count2
 	};
-	struct stVBR {//可変ビットレート情報 (廃止？)
+	struct stVBR { // variable bit rate information (unused?)
 		unsigned int vbr;              // 'vbr'
-		unsigned short r01;            // 不明 0~0x1FF
-		unsigned short r02;            // 不明
+		unsigned short r01;            // unknown 0~0x1FF
+		unsigned short r02;            // unknown
 	};
-	struct stATH {//ATHテーブル情報 (v2.0から廃止？)
+	struct stATH { // ATH table information (unused from v2.0?)
 		unsigned int ath;              // 'ath'
-		unsigned short type;           // テーブルの種類(0:全て0 1:テーブル1)
+		unsigned short type;           // table type (0:all is 0, 1:table 1)
 	};
-	struct stLoop {//ループ情報
+	struct stLoop { //loop information
 		unsigned int loop;             // 'loop'
-		unsigned int start;            // ループ開始ブロックインデックス 0~loopEnd
-		unsigned int end;              // ループ終了ブロックインデックス loopStart~(stFormat::blockCount-1)
-		unsigned short count;          // ループ回数 0x80で無限ループ
-		unsigned short r01;            // 不明(0x226) 
+		unsigned int start;            // loop start block index 0~loopEnd
+		unsigned int end;              // loop end block index loopStart~(stFormat::blockCount-1)
+		unsigned short count;          // loop count, 0x80 is infinite loop
+		unsigned short r01;            // unknown(0x226) 
 	};
-	struct stCipher {//暗号テーブル情報
+	struct stCipher { // cipher table information
 		unsigned int ciph;             // 'ciph'
-		unsigned short type;           // 暗号化の種類(0:暗号化なし 1:鍵なし暗号化 0x38:鍵あり暗号化)
+		unsigned short type;           // cipher type (0:no 1:no key 0x38:key)
 	};
-	struct stRVA {//相対ボリューム調節情報
+	struct stRVA { // relative volume information
 		unsigned int rva;              // 'rva'
-		float volume;                  // ボリューム
+		float volume;                  // volume
 	};
-	struct stComment {//コメント情報
+	struct stComment { // comment information
 		unsigned int comm;             // 'comm'
-		unsigned char len;             // コメントの長さ？
+		unsigned char len;             // comment length?
 																	 //char comment[];
 	};
-	struct stPadding {//パディング
+	struct stPadding { // padding
 		unsigned int pad;              // 'pad'
 	};
 	unsigned int _version;
