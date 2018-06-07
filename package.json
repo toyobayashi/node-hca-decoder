@@ -2,7 +2,10 @@
   "name": "hca-decoder",
   "version": "1.0.0",
   "description": "HCA Decoder in Node.js",
-  "main": "./dist/hca.node",
+  "main": "./index.js",
+  "engines": {
+    "node": ">=8.0.0"
+  },
   "scripts": {
     "test": "node test",
     "install": "node-gyp rebuild"
