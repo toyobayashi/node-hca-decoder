@@ -5,9 +5,18 @@
 const hcaDecoder = require('.')
 let hca = new hcaDecoder.HCADecoder(/* ciphKey1, ciphKey2 */)
 let filenameHCA = 'path/to/somefile.hca'
+
+hca.decodeToWaveFile(filenameHCA/* , filenameWAV, volume, mode, loop, (err, wavFilePath) => {} */)
+// => undefined (Async)
+
 hca.decodeToWaveFileSync(filenameHCA/* , filenameWAV, volume, mode, loop */)
+// => string | undefined
+
 hca.decrypt(filenameHCA)
+// => string | undefined
+
 hca.printInfo(filenameHCA)
+// => undefined
 ```
 
 ------------------------------------
