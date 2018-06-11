@@ -1,6 +1,6 @@
 {
   "name": "hca-decoder",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "HCA Decoder in Node.js",
   "main": "./index.js",
   "engines": {

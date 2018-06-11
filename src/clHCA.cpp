@@ -528,7 +528,8 @@ bool clHCA::DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float v
 
 	_rva_volume *= volume;
 
-	void *modeFunction = DecodeToWavefile_DecodeMode16bit;
+    void (*modeFunction)(float, void *) = NULL;
+    modeFunction = DecodeToWavefile_DecodeMode16bit;
 	switch (mode) {
 	case 0:modeFunction = DecodeToWavefile_DecodeModeFloat; break;
 	case 8:modeFunction = DecodeToWavefile_DecodeMode8bit; break;
@@ -557,7 +558,7 @@ bool clHCA::DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float v
 
 	return true;
 }
-bool clHCA::DecodeToWavefile_Decode(void *fp1, void *fp2, unsigned int address, unsigned int count, void *data, void *modeFunction) {
+bool clHCA::DecodeToWavefile_Decode(void *fp1, void *fp2, unsigned int address, unsigned int count, void *data, void (*modeFunction)(float, void*)) {
 	float f;
 	fseek((FILE *)fp1, address, SEEK_SET);
 	for (unsigned int l = 0; l<count; l++, address += _blockSize) {
@@ -734,14 +735,14 @@ void clHCA::clCipher::Init56(unsigned int key1, unsigned int key2) {
 	}
 
 	unsigned char t2[0x10] = {
-		t1[1],t1[1] ^ t1[6],
-		t1[2] ^ t1[3],t1[2],
-		t1[2] ^ t1[1],t1[3] ^ t1[4],
-		t1[3],t1[3] ^ t1[2],
-		t1[4] ^ t1[5],t1[4],
-		t1[4] ^ t1[3],t1[5] ^ t1[6],
-		t1[5],t1[5] ^ t1[4],
-		t1[6] ^ t1[1],t1[6],
+		t1[1],static_cast<unsigned char>(t1[1] ^ t1[6]),
+		static_cast<unsigned char>(t1[2] ^ t1[3]),t1[2],
+		static_cast<unsigned char>(t1[2] ^ t1[1]),static_cast<unsigned char>(t1[3] ^ t1[4]),
+		t1[3],static_cast<unsigned char>(t1[3] ^ t1[2]),
+		static_cast<unsigned char>(t1[4] ^ t1[5]),t1[4],
+		static_cast<unsigned char>(t1[4] ^ t1[3]),static_cast<unsigned char>(t1[5] ^ t1[6]),
+		t1[5],static_cast<unsigned char>(t1[5] ^ t1[4]),
+		static_cast<unsigned char>(t1[6] ^ t1[1]),t1[6],
 	};
 
 	unsigned char t3[0x100], t31[0x10], t32[0x10], *t = t3;
