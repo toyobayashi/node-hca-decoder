@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <memory.h>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 inline short bswap(short v) { short r = v & 0xFF; r <<= 8; v >>= 8; r |= v & 0xFF; return r; }
 inline unsigned short bswap(unsigned short v) { unsigned short r = v & 0xFF; r <<= 8; v >>= 8; r |= v & 0xFF; return r; }
 inline int bswap(int v) { int r = v & 0xFF; r <<= 8; v >>= 8; r |= v & 0xFF; r <<= 8; v >>= 8; r |= v & 0xFF; r <<= 8; v >>= 8; r |= v & 0xFF; return r; }
@@ -46,10 +50,19 @@ bool clHCA::PrintInfo(const char *filenameHCA) {
 	if (!(filenameHCA))return false;
 
 	FILE *fp;
+#ifdef _WIN32
+	wchar_t strUnicode[260];
+	MultiByteToWideChar(CP_UTF8, 0, filenameHCA, -1, strUnicode, 260);
+	if (!(fp = _wfopen(strUnicode, L"rb"))) { 
+		printf("Error: Can not open file.\n");
+		return false; 
+	}
+#else
 	if (!(fp = fopen(filenameHCA, "rb"))) {
 		printf("Error: Can not open file.\n");
 		return false;
 	}
+#endif
 
 	stHeader header;
 	memset(&header, 0, sizeof(header));
@@ -284,7 +297,13 @@ bool clHCA::Decrypt(const char *filenameHCA) {
 	if (!(filenameHCA))return false;
 
 	FILE *fp;
+#ifdef _WIN32
+	wchar_t strUnicode[260];
+	MultiByteToWideChar(CP_UTF8, 0, filenameHCA, -1, strUnicode, 260);
+	if (!(fp = _wfopen(strUnicode, L"r+b"))) return false;
+#else
 	if (!(fp = fopen(filenameHCA, "r+b")))return false;
+#endif
 
 	stHeader header;
 	memset(&header, 0, sizeof(header));
@@ -417,11 +436,16 @@ bool clHCA::Decrypt(const char *filenameHCA) {
 }
 
 bool clHCA::DecodeToWavefile(const char *filenameHCA, const char *filenameWAV, float volume, int mode, int loop) {
-
 	if (!(filenameHCA))return false;
 
 	FILE *fp;
+#ifdef _WIN32
+	wchar_t strUnicode[260];
+	MultiByteToWideChar(CP_UTF8, 0, filenameHCA, -1, strUnicode, 260);
+	if (!(fp = _wfopen(strUnicode, L"rb"))) return false;
+#else
 	if (!(fp = fopen(filenameHCA, "rb")))return false;
+#endif
 
 	if (!DecodeToWavefileStream(fp, filenameWAV, volume, mode, loop)) { fclose(fp); return false; }
 
@@ -449,7 +473,13 @@ bool clHCA::DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float v
 	if (!Decode(data1, header.dataOffset, 0)) { delete[] data1; return false; }
 
 	FILE *fp2;
+#ifdef _WIN32
+	wchar_t strUnicode[260];
+	MultiByteToWideChar(CP_UTF8, 0, filenameWAV, -1, strUnicode, 260);
+	if (!(fp2 = _wfopen(strUnicode, L"wb"))) { delete[] data1; return false; }
+#else
 	if (!(fp2 = fopen(filenameWAV, "wb"))) { delete[] data1; return false; }
+#endif
 
 	struct stWAVEHeader {
 		char riff[4];
