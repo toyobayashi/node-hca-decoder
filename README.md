@@ -1,27 +1,46 @@
 # node-hca-decoder
 
+[![Build status](https://api.travis-ci.com/toyobayashi/node-hca-decoder.svg?branch=master)](https://travis-ci.com/toyobayashi/node-hca-decoder)
+
 HCA decoder based on [Nyagamon/HCADecoder](https://github.com/Nyagamon/HCADecoder)
 
-Require Node.js >= 8.x (NAPI)
+Require Node.js >= 8.6 (NAPI Async Worker)
 
 ## Usage
 
 ``` js
 const { HCADecoder } = require('hca-decoder')
-let hca = new HCADecoder(/* ciphKey1, ciphKey2 */)
-let filenameHCA = 'path/to/somefile.hca'
+const hca = new HCADecoder(/* ciphKey1, ciphKey2 */)
+const filenameHCA = 'path/to/somefile.hca'
 
-hca.decodeToWaveFile(filenameHCA/* , filenameWAV, volume, mode, loop, (err, wavFilePath) => {} */)
+hca.decodeToWaveFile(filenameHCA/* , filenameWAV, volume, mode, (err, wavFilePath) => {} */)
 // => undefined (Async)
 
-hca.decodeToWaveFileSync(filenameHCA/* , filenameWAV, volume, mode, loop */)
-// => string | undefined
-
-hca.decrypt(filenameHCA)
-// => string | undefined
+hca.decodeToWaveFileSync(filenameHCA/* , filenameWAV, volume, mode */)
+// => boolean
 
 hca.printInfo(filenameHCA)
 // => undefined
+```
+
+## Test
+
+``` bash
+# install node-gyp (5+)
+$ npm install -g node-gyp
+
+# tell npm use global node-gyp
+$ npm config set node_gyp "`npm prefix -g`/lib/node_modules/node-gyp/bin/node-gyp.js"
+
+# for Windows
+# > for /f "delims=" %P in ('npm prefix -g') do npm config set node_gyp "%P\node_modules\node-gyp\bin\node-gyp.js"
+
+# install node C++ header
+$ node-gyp install # --target=<node version>
+
+$ npm install # --no-package-lock
+
+$ npm test
 ```
 
 ## License
