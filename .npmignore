@@ -1,5 +1,6 @@
 node_modules
 .vscode
+.travis.yml
 /dist
 /build
 package-lock.json
@@ -7,3 +8,6 @@ package-lock.json
 /assets
 /script
 /release
+/src/common.h
+/src/hca.cpp
+/src/hca.h
