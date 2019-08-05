@@ -7,14 +7,12 @@ export class HCADecoder {
   decodeToWaveFile (filenameHCA: string, filenameWAV: string, callback?: decodeCallback): void
   decodeToWaveFile (filenameHCA: string, filenameWAV: string, volume: number, callback?: decodeCallback): void
   decodeToWaveFile (filenameHCA: string, filenameWAV: string, volume: number, mode: number, callback?: decodeCallback): void
-  decodeToWaveFile (filenameHCA: string, filenameWAV: string, volume: number, mode: number, loop: number, callback?: decodeCallback): void
 
   decodeToWaveFileSync (filenameHCA: string): boolean
   decodeToWaveFileSync (filenameHCA: string, filenameWAV: string): boolean
   decodeToWaveFileSync (filenameHCA: string, filenameWAV: string, volume: number): boolean
   decodeToWaveFileSync (filenameHCA: string, filenameWAV: string, volume: number, mode: number): boolean
-  decodeToWaveFileSync (filenameHCA: string, filenameWAV: string, volume: number, mode: number, loop: number): boolean
 
   printInfo (filenameHCA: string): void
-  decrypt (filenameHCA: string): boolean
+  // decrypt (filenameHCA: string): boolean
 }

@@ -17,12 +17,12 @@ describe('HCADecoder class', function () {
     hd.printInfo(getPath('assets/test/printInfo/1.hca'))
   })
 
-  it('#decrypt', function () {
-    fs.mkdirsSync(getPath('assets/test/decrypt'))
-    fs.copySync(getPath('assets/origin/1.hca'), getPath('assets/test/decrypt/1.hca'))
+  // it('#decrypt', function () {
+  //   fs.mkdirsSync(getPath('assets/test/decrypt'))
+  //   fs.copySync(getPath('assets/origin/1.hca'), getPath('assets/test/decrypt/1.hca'))
 
-    assert.ok(hd.decrypt(getPath('assets/test/decrypt/1.hca')))
-  })
+  //   assert.ok(hd.decrypt(getPath('assets/test/decrypt/1.hca')))
+  // })
 
   it('#decodeToWaveFile1', function (done) {
     fs.mkdirsSync(getPath('assets/test/decodeToWaveFile'))

@@ -18,7 +18,7 @@ private:
   unsigned int ciphKey2;
 
   Napi::Value _decodeToWaveFileSync(const Napi::CallbackInfo &info);
-  Napi::Value _decrypt(const Napi::CallbackInfo &info);
+  // Napi::Value _decrypt(const Napi::CallbackInfo &info);
   Napi::Value _printInfo(const Napi::CallbackInfo &info);
   Napi::Value _decodeToWaveFile(const Napi::CallbackInfo &info);
 };
@@ -34,7 +34,7 @@ private:
   std::string _wavFile;
   double _volumn;
   int _mode;
-  int _loop;
+  // int _loop;
   bool _res;
 };
 
@@ -44,12 +44,12 @@ HCAAsyncWorker::HCAAsyncWorker(clHCA* hca, const std::string& hcaFile, const std
   _wavFile = wav;
   _volumn = volumn;
   _mode = mode;
-  _loop = loop;
+  // _loop = loop;
   _res = false;
 }
 
 void HCAAsyncWorker::Execute() {
-  _res = _hca.DecodeToWavefile(_hcaFile.c_str(), _wavFile.c_str(), _volumn, _mode, _loop);
+  _res = _hca.DecodeToWavefile(_hcaFile.c_str(), _wavFile.c_str(), _volumn, _mode, /* _loop */0);
 }
 
 void HCAAsyncWorker::OnOK() {
@@ -71,7 +71,7 @@ Napi::Object HCADecoder::init(Napi::Env env, Napi::Object exports) {
   // This method is used to hook the accessor and method callbacks
   Napi::Function classConstructor = DefineClass(env, "HCADecoder", {
     InstanceMethod("printInfo", &HCADecoder::_printInfo),
-    InstanceMethod("decrypt", &HCADecoder::_decrypt),
+    // InstanceMethod("decrypt", &HCADecoder::_decrypt),
     InstanceMethod("decodeToWaveFile", &HCADecoder::_decodeToWaveFile),
     InstanceMethod("decodeToWaveFileSync", &HCADecoder::_decodeToWaveFileSync)
   });
@@ -134,21 +134,21 @@ Napi::Value HCADecoder::_printInfo(const Napi::CallbackInfo &info){
   return Napi::Boolean::New(env, false);
 }
 
-Napi::Value HCADecoder::_decrypt(const Napi::CallbackInfo &info){
-  Napi::Env env = info.Env();
-  if (info.Length() < 1) {
-    Napi::Error::New(env, "HCADecoder::decrypt(): arguments.length < 1").ThrowAsJavaScriptException();
-    return Napi::Boolean::New(env, false);
-  }
+// Napi::Value HCADecoder::_decrypt(const Napi::CallbackInfo &info){
+//   Napi::Env env = info.Env();
+//   if (info.Length() < 1) {
+//     Napi::Error::New(env, "HCADecoder::decrypt(): arguments.length < 1").ThrowAsJavaScriptException();
+//     return Napi::Boolean::New(env, false);
+//   }
 
-  if (info[0].IsString() && _hca) {
-    const char* hcaPath = info[0].As<Napi::String>().Utf8Value().c_str();
-    bool res = clHCA(ciphKey1, ciphKey2).Decrypt(hcaPath);
-    return Napi::Boolean::New(env, res);
-  }
+//   if (info[0].IsString() && _hca) {
+//     const char* hcaPath = info[0].As<Napi::String>().Utf8Value().c_str();
+//     bool res = clHCA(ciphKey1, ciphKey2).Decrypt(hcaPath);
+//     return Napi::Boolean::New(env, res);
+//   }
 
-  return Napi::Boolean::New(env, false);
-}
+//   return Napi::Boolean::New(env, false);
+// }
 
 Napi::Value HCADecoder::_decodeToWaveFile(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
@@ -191,8 +191,10 @@ Napi::Value HCADecoder::_decodeToWaveFile(const Napi::CallbackInfo &info){
         case 3:
           if (info[i].IsNumber()) mode = info[i].As<Napi::Number>().Int32Value();
           break;
-        case 4:
-          if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
+        // case 4:
+        //   if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
+        //   break;
+        default:
           break;
       }
     }
@@ -240,8 +242,10 @@ Napi::Value HCADecoder::_decodeToWaveFileSync(const Napi::CallbackInfo &info){
       case 3:
         if (info[i].IsNumber()) mode = info[i].As<Napi::Number>().Int32Value();
         break;
-      case 4:
-        if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
+      // case 4:
+      //   if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
+      //   break;
+      default:
         break;
     }
   }
