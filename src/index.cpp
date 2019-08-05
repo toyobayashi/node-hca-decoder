@@ -8,11 +8,14 @@ public:
   HCADecoder(const Napi::CallbackInfo &info);
   virtual ~HCADecoder();
 
-  clHCA hca();
+  clHCA* hca();
 
 private:
   static Napi::FunctionReference _constructor;
-  clHCA _hca;
+  clHCA* _hca;
+  
+  unsigned int ciphKey1;
+  unsigned int ciphKey2;
 
   Napi::Value _decodeToWaveFileSync(const Napi::CallbackInfo &info);
   Napi::Value _decrypt(const Napi::CallbackInfo &info);
@@ -47,7 +50,6 @@ HCAAsyncWorker::HCAAsyncWorker(clHCA* hca, const std::string& hcaFile, const std
 
 void HCAAsyncWorker::Execute() {
   _res = _hca.DecodeToWavefile(_hcaFile.c_str(), _wavFile.c_str(), _volumn, _mode, _loop);
-  printf("%s\n", _res ? "true" : "false1");
 }
 
 void HCAAsyncWorker::OnOK() {
@@ -82,19 +84,19 @@ Napi::Object HCADecoder::init(Napi::Env env, Napi::Object exports) {
 }
 
 HCADecoder::HCADecoder(const Napi::CallbackInfo &info) : Napi::ObjectWrap<HCADecoder>(info) {
-  // _hca = nullptr;
+  _hca = nullptr;
   Napi::Env env = info.Env();
-  unsigned int ciphKey1 = 0xF27E3B22;
-  unsigned int ciphKey2 = 0x00003657;
+  ciphKey1 = 0xF27E3B22;
+  ciphKey2 = 0x00003657;
   size_t argc = info.Length();
 
   if (argc < 1) {
-    _hca = clHCA(ciphKey1, ciphKey2);
+    _hca = new clHCA(ciphKey1, ciphKey2);
   } else if (argc < 2) {
     if (info[0].IsNumber()) {
       ciphKey1 = info[0].As<Napi::Number>().Uint32Value();
     }
-    _hca = clHCA(ciphKey1, ciphKey2);
+    _hca = new clHCA(ciphKey1, ciphKey2);
   } else {
     if (info[0].IsNumber()) {
       ciphKey1 = info[0].As<Napi::Number>().Uint32Value();
@@ -103,18 +105,18 @@ HCADecoder::HCADecoder(const Napi::CallbackInfo &info) : Napi::ObjectWrap<HCADec
     if (info[1].IsNumber()) {
       ciphKey2 = info[1].As<Napi::Number>().Uint32Value();
     }
-    _hca = clHCA(ciphKey1, ciphKey2);
+    _hca = new clHCA(ciphKey1, ciphKey2);
   }
 }
 
 HCADecoder::~HCADecoder() {
-  // if (_hca) {
-  //   delete _hca;
-  //   _hca = nullptr;
-  // }
+  if (_hca) {
+    delete _hca;
+    _hca = nullptr;
+  }
 }
 
-clHCA HCADecoder::hca() {
+clHCA* HCADecoder::hca() {
   return _hca;
 }
 
@@ -125,8 +127,8 @@ Napi::Value HCADecoder::_printInfo(const Napi::CallbackInfo &info){
     return Napi::Boolean::New(env, false);
   }
 
-  if (info[0].IsString()/*  && _hca */) {
-    return Napi::Boolean::New(env, _hca.PrintInfo(info[0].As<Napi::String>().Utf8Value().c_str()));
+  if (info[0].IsString() && _hca) {
+    return Napi::Boolean::New(env, _hca->PrintInfo(info[0].As<Napi::String>().Utf8Value().c_str()));
   }
 
   return Napi::Boolean::New(env, false);
@@ -139,12 +141,9 @@ Napi::Value HCADecoder::_decrypt(const Napi::CallbackInfo &info){
     return Napi::Boolean::New(env, false);
   }
 
-  if (info[0].IsString()/*  && _hca */) {
+  if (info[0].IsString() && _hca) {
     const char* hcaPath = info[0].As<Napi::String>().Utf8Value().c_str();
-    printf("%s\n", hcaPath);
-    // bool res = clHCA(0xF27E3B22, 0x00003657).Decrypt(hcaPath);
-    bool res = _hca.Decrypt(hcaPath);
-    printf("%s\n", res ? "true2" : "false2");
+    bool res = clHCA(ciphKey1, ciphKey2).Decrypt(hcaPath);
     return Napi::Boolean::New(env, res);
   }
 
@@ -199,7 +198,7 @@ Napi::Value HCADecoder::_decodeToWaveFile(const Napi::CallbackInfo &info){
     }
   }
 
-  HCAAsyncWorker* worker = new HCAAsyncWorker(&_hca, hca, wav, volumn, mode, loop, callback);
+  HCAAsyncWorker* worker = new HCAAsyncWorker(_hca, hca, wav, volumn, mode, loop, callback);
   worker->Queue();
 
   return env.Undefined();
@@ -247,7 +246,7 @@ Napi::Value HCADecoder::_decodeToWaveFileSync(const Napi::CallbackInfo &info){
     }
   }
 
-  return Napi::Boolean::New(env, _hca.DecodeToWavefile(hca.c_str(), wav.c_str(), volumn, mode, loop));
+  return Napi::Boolean::New(env, _hca->DecodeToWavefile(hca.c_str(), wav.c_str(), volumn, mode, loop));
 }
 
 static Napi::Object _index (Napi::Env env, Napi::Object exports) {
