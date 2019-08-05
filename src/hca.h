@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __HCA_H__
+#define __HCA_H__
 #include <node_api.h>
 #include "./common.h"
 
@@ -38,3 +39,5 @@ typedef struct {
   napi_ref _cbref;
   napi_async_work _request;
 } AsyncDec;
+
+#endif

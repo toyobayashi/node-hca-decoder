@@ -1,6 +1,9 @@
 node_modules
 .vscode
-dist
-build
-test
+/dist
+/build
 package-lock.json
+/test
+/assets
+/script
+/release

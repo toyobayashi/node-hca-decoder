@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __COMMON_H__
+#define __COMMON_H__
 // Empty value so that macros here are able to return NULL or void
 #define NAPI_RETVAL_NOTHING  // Intentionally blank #define
 
@@ -66,4 +67,6 @@
   static napi_value init (napi_env env, napi_value exports);             \
   NAPI_MODULE(NODE_GYP_MODULE_NAME, init)                                \
   static napi_value init (napi_env env, napi_value exports)
+#endif
+
 #endif

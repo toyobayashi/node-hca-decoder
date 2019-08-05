@@ -305,3 +305,8 @@ void HCADecoder::destructor(napi_env env, void* nativeObject, void* finalizeHint
   HCADecoder* dec = static_cast<HCADecoder*>(nativeObject);
   delete dec;
 }
+
+NAPI_MODULE_INIT() {
+  HCADecoder::init(env, exports);
+  return exports;
+}
