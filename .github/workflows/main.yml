@@ -10,6 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     steps:
     - uses: actions/checkout@v2
@@ -17,7 +19,8 @@ jobs:
       with:
         node-version: '12.18.3'
         registry-url: 'https://registry.npmjs.org'
-        always-auth: 'true'
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     - name: Windows build
       if: ${{ matrix.os == 'windows-latest' }}
@@ -31,6 +34,8 @@ jobs:
       run: |
         chmod +x ./script/build.sh
         ./script/build.sh
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     - name: macOS build
       if: ${{ matrix.os == 'macos-latest' }}
@@ -41,6 +46,8 @@ jobs:
 
     - name: Test
       run: npm test
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     - name: Before Deploy
       if: ${{ startsWith(github.event.ref, 'refs/tags') }}
