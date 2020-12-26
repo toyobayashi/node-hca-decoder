@@ -48,6 +48,6 @@ jobs:
 
     - name: Publish
       if: ${{ startsWith(github.event.ref, 'refs/tags') && matrix.os == 'ubuntu-latest' }}
-      run: npm publish
+      run: ls -al && rm -rf .npmrc && npm publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
