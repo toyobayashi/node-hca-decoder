@@ -150,6 +150,8 @@ Napi::Value HCADecoder::_printInfo(const Napi::CallbackInfo &info){
 //   return Napi::Boolean::New(env, false);
 // }
 
+static Napi::Value noop(const Napi::CallbackInfo &info) { return info.Env().Undefined(); }
+
 Napi::Value HCADecoder::_decodeToWaveFile(const Napi::CallbackInfo &info){
   Napi::Env env = info.Env();
   size_t argc = info.Length();
@@ -199,6 +201,9 @@ Napi::Value HCADecoder::_decodeToWaveFile(const Napi::CallbackInfo &info){
       }
     }
   }
+  if (callback.IsEmpty()) {
+    callback = Napi::Function::New(env, noop);
+  }
 
   HCAAsyncWorker* worker = new HCAAsyncWorker(_hca, hca, wav, volumn, mode, loop, callback);
   worker->Queue();
@@ -211,12 +216,12 @@ Napi::Value HCADecoder::_decodeToWaveFileSync(const Napi::CallbackInfo &info){
   size_t argc = info.Length();
   if (argc < 1) {
     Napi::Error::New(env, "HCADecoder::decodeToWaveFileSync(): arguments.length < 1").ThrowAsJavaScriptException();
-    return Napi::Boolean::New(env, false);
+    return Napi::String::New(env, "");
   }
 
   if (!info[0].IsString()) {
     Napi::Error::New(env, "HCADecoder::decodeToWaveFileSync(): typeof arguments[0] !== 'string'").ThrowAsJavaScriptException();
-    return Napi::Boolean::New(env, false);
+    return Napi::String::New(env, "");
   }
 
   std::string hca = "";
@@ -250,7 +255,13 @@ Napi::Value HCADecoder::_decodeToWaveFileSync(const Napi::CallbackInfo &info){
     }
   }
 
-  return Napi::Boolean::New(env, _hca->DecodeToWavefile(hca.c_str(), wav.c_str(), volumn, mode, loop));
+  bool res = _hca->DecodeToWavefile(hca.c_str(), wav.c_str(), volumn, mode, loop);
+  if (!res) {
+    Napi::Error::New(env, hca + " decode failed.").ThrowAsJavaScriptException();
+    return Napi::String::New(env, "");
+  }
+
+  return Napi::String::New(env, wav);
 }
 
 static Napi::Object _index (Napi::Env env, Napi::Object exports) {

@@ -161,8 +161,8 @@ describe('HCADecoder class', function () {
     fs.copySync(getPath('assets/origin/2.hca'), getPath('assets/test/decodeToWaveFileSync/2.hca'))
     fs.copySync(getPath('assets/origin/3.hca'), getPath('assets/test/decodeToWaveFileSync/3.hca'))
 
-    assert.ok(hd.decodeToWaveFileSync(getPath('assets/test/decodeToWaveFileSync/1.hca')))
-    assert.ok(hd.decodeToWaveFileSync(getPath('assets/test/decodeToWaveFileSync/2.hca'), null, 0.2))
-    assert.ok(hd.decodeToWaveFileSync(getPath('assets/test/decodeToWaveFileSync/3.hca'), null, 1, 8))
+    assert.ok(hd.decodeToWaveFileSync(getPath('assets/test/decodeToWaveFileSync/1.hca')) === getPath('assets/test/decodeToWaveFileSync/1.wav'))
+    assert.ok(hd.decodeToWaveFileSync(getPath('assets/test/decodeToWaveFileSync/2.hca'), null, 0.2) === getPath('assets/test/decodeToWaveFileSync/2.wav'))
+    assert.ok(hd.decodeToWaveFileSync(getPath('assets/test/decodeToWaveFileSync/3.hca'), null, 1, 8) === getPath('assets/test/decodeToWaveFileSync/3.wav'))
   })
 })
