@@ -1,6 +1,6 @@
 {
   "name": "hca-decoder",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "HCA Decoder in Node.js",
   "main": "./index.js",
   "engines": {
@@ -24,10 +24,10 @@
   },
   "homepage": "https://github.com/toyobayashi/node-hca-decoder#readme",
   "devDependencies": {
-    "fs-extra": "^8.1.0",
-    "mocha": "^6.2.0"
+    "fs-extra": "^9.0.1",
+    "mocha": "^8.2.1"
   },
   "dependencies": {
-    "node-addon-api": "^1.7.1"
+    "node-addon-api": "3.1.0"
   }
 }

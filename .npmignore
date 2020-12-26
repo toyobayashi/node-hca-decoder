@@ -1,6 +1,7 @@
 node_modules
 .vscode
-.travis.yml
+.travis*
+.github
 /dist
 /build
 package-lock.json
