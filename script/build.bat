@@ -6,4 +6,5 @@ for /f "delims=" %%P in ('npm prefix -g') do call npm.cmd config set node_gyp "%
 
 call node-gyp.cmd install
 
-call npm.cmd install
+call npm.cmd install --ignore-scripts
+call npm.cmd run build

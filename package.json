@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "mocha test",
+    "build": "node-gyp rebuild",
     "before-deploy": "node ./script/before-deploy.js"
   },
   "repository": {
