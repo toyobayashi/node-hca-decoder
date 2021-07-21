@@ -1,15 +1,15 @@
 #include <napi.h>
 #include "clHCA.h"
 #include <stdio.h>
-#include <memory>
 
 class HCADecoder : public Napi::ObjectWrap<HCADecoder> {
 public:
   static Napi::Object init(Napi::Env env, Napi::Object exports);
   static Napi::Value _getInfo(const Napi::CallbackInfo &info);
   HCADecoder(const Napi::CallbackInfo &info);
+  virtual ~HCADecoder();
 private:
-  std::shared_ptr<clHCA> _hca;
+  clHCA* _hca;
 
   unsigned int ciphKey1;
   unsigned int ciphKey2;
@@ -22,11 +22,11 @@ private:
 
 class HCAAsyncWorker : public Napi::AsyncWorker {
 public:
-  HCAAsyncWorker(std::shared_ptr<clHCA>, const std::string&, const std::string&, double, int, int, const Napi::Function&);
+  HCAAsyncWorker(clHCA*, const std::string&, const std::string&, double, int, int, const Napi::Function&);
   void Execute();
   void OnOK();
 private:
-  std::shared_ptr<clHCA> _hca;
+  clHCA _hca;
   std::string _hcaFile;
   std::string _wavFile;
   double _volumn;
@@ -35,8 +35,8 @@ private:
   bool _res;
 };
 
-HCAAsyncWorker::HCAAsyncWorker(std::shared_ptr<clHCA> hca, const std::string& hcaFile, const std::string& wav, double volumn, int mode, int loop, const Napi::Function& callback): Napi::AsyncWorker(callback) {
-  _hca = hca;
+HCAAsyncWorker::HCAAsyncWorker(clHCA* hca, const std::string& hcaFile, const std::string& wav, double volumn, int mode, int loop, const Napi::Function& callback): Napi::AsyncWorker(callback) {
+  _hca = *hca;
   _hcaFile = hcaFile;
   _wavFile = wav;
   _volumn = volumn;
@@ -46,7 +46,7 @@ HCAAsyncWorker::HCAAsyncWorker(std::shared_ptr<clHCA> hca, const std::string& hc
 }
 
 void HCAAsyncWorker::Execute() {
-  _res = _hca->DecodeToWavefile(_hcaFile.c_str(), _wavFile.c_str(), _volumn, _mode, _loop);
+  _res = _hca.DecodeToWavefile(_hcaFile.c_str(), _wavFile.c_str(), _volumn, _mode, _loop);
 }
 
 void HCAAsyncWorker::OnOK() {
@@ -88,12 +88,12 @@ HCADecoder::HCADecoder(const Napi::CallbackInfo &info) : Napi::ObjectWrap<HCADec
   size_t argc = info.Length();
 
   if (argc < 1) {
-    _hca = std::make_shared<clHCA>(ciphKey1, ciphKey2);
+    _hca = new clHCA(ciphKey1, ciphKey2);
   } else if (argc < 2) {
     if (info[0].IsNumber()) {
       ciphKey1 = info[0].As<Napi::Number>().Uint32Value();
     }
-    _hca = std::make_shared<clHCA>(ciphKey1, ciphKey2);
+    _hca = new clHCA(ciphKey1, ciphKey2);
   } else {
     if (info[0].IsNumber()) {
       ciphKey1 = info[0].As<Napi::Number>().Uint32Value();
@@ -102,7 +102,14 @@ HCADecoder::HCADecoder(const Napi::CallbackInfo &info) : Napi::ObjectWrap<HCADec
     if (info[1].IsNumber()) {
       ciphKey2 = info[1].As<Napi::Number>().Uint32Value();
     }
-    _hca = std::make_shared<clHCA>(ciphKey1, ciphKey2);
+    _hca = new clHCA(ciphKey1, ciphKey2);
+  }
+}
+
+HCADecoder::~HCADecoder() {
+  if (_hca != nullptr) {
+    delete _hca;
+    _hca = nullptr;
   }
 }
 
