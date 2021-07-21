@@ -6,6 +6,7 @@
 class HCADecoder : public Napi::ObjectWrap<HCADecoder> {
 public:
   static Napi::Object init(Napi::Env env, Napi::Object exports);
+  static Napi::Value _getInfo(const Napi::CallbackInfo &info);
   HCADecoder(const Napi::CallbackInfo &info);
 private:
   std::shared_ptr<clHCA> _hca;
@@ -64,6 +65,7 @@ void HCAAsyncWorker::OnOK() {
 Napi::Object HCADecoder::init(Napi::Env env, Napi::Object exports) {
   // This method is used to hook the accessor and method callbacks
   Napi::Function classConstructor = DefineClass(env, "HCADecoder", {
+    StaticMethod("getInfo", HCADecoder::_getInfo),
     InstanceMethod("printInfo", &HCADecoder::_printInfo),
     // InstanceMethod("decrypt", &HCADecoder::_decrypt),
     InstanceMethod("decodeToWaveFile", &HCADecoder::_decodeToWaveFile),
@@ -246,6 +248,79 @@ Napi::Value HCADecoder::_decodeToWaveFileSync(const Napi::CallbackInfo &info){
   }
 
   return Napi::String::New(env, wav);
+}
+
+Napi::Value HCADecoder::_getInfo(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+  if (info.Length() < 1) {
+    Napi::Error::New(env, "HCADecoder::getInfo(): arguments.length < 1").ThrowAsJavaScriptException();
+    return Napi::Value();
+  }
+
+  if (!info[0].IsString()) {
+    Napi::Error::New(env, "HCADecoder::getInfo(): typeof arguments[0] !== 'string'").ThrowAsJavaScriptException();
+    return Napi::Value();
+  }
+
+  std::string hcafile = info[0].As<Napi::String>().Utf8Value();
+  HCAInfo hcainfo;
+  int r = clHCA::GetInfo(hcafile.c_str(), &hcainfo);
+  if (r != 0) {
+    Napi::Error::New(env, getInfoErrorMessage(r)).ThrowAsJavaScriptException();
+    return Napi::Value();
+  }
+
+  Napi::Object ret = Napi::Object::New(env);
+  std::string ver = std::to_string(hcainfo.versionMajor);
+  ver += ".";
+  ver += std::to_string(hcainfo.versionMinor);
+  ret["version"] = Napi::String::New(env, ver);
+  ret["channelCount"] = Napi::Number::New(env, hcainfo.channelCount);
+  ret["samplingRate"] = Napi::Number::New(env, hcainfo.samplingRate);
+  ret["blockCount"] = Napi::Number::New(env, hcainfo.blockCount);
+  ret["muteHeader"] = Napi::Number::New(env, hcainfo.muteHeader);
+  ret["muteFooter"] = Napi::Number::New(env, hcainfo.muteFooter);
+
+  if (hcainfo.comp) {
+    ret["bitRate"] = Napi::Number::New(env, hcainfo.bitRate);
+    ret["blockSize"] = Napi::Number::New(env, hcainfo.blockSize);
+    ret["comp1"] = Napi::Number::New(env, hcainfo.comp1);
+    ret["comp2"] = Napi::Number::New(env, hcainfo.comp2);
+    ret["comp3"] = Napi::Number::New(env, hcainfo.comp3);
+    ret["comp4"] = Napi::Number::New(env, hcainfo.comp4);
+    ret["comp5"] = Napi::Number::New(env, hcainfo.comp5);
+    ret["comp6"] = Napi::Number::New(env, hcainfo.comp6);
+    ret["comp7"] = Napi::Number::New(env, hcainfo.comp7);
+    ret["comp8"] = Napi::Number::New(env, hcainfo.comp8);
+  }
+  if (hcainfo.dec) {
+    ret["bitRate"] = Napi::Number::New(env, hcainfo.bitRate);
+    ret["blockSize"] = Napi::Number::New(env, hcainfo.blockSize);
+    ret["dec1"] = Napi::Number::New(env, hcainfo.dec1);
+    ret["dec2"] = Napi::Number::New(env, hcainfo.dec2);
+    ret["dec3"] = Napi::Number::New(env, hcainfo.dec3);
+    ret["dec4"] = Napi::Number::New(env, hcainfo.dec4);
+    ret["dec5"] = Napi::Number::New(env, hcainfo.dec5);
+    ret["dec6"] = Napi::Number::New(env, hcainfo.dec6);
+    ret["dec7"] = Napi::Number::New(env, hcainfo.dec7);
+  }
+  if (hcainfo.vbr) {
+    ret["vbr1"] = Napi::Number::New(env, hcainfo.vbr1);
+    ret["vbr2"] = Napi::Number::New(env, hcainfo.vbr2);
+  }
+  ret["athType"] = Napi::Number::New(env, hcainfo.athType);
+  ret["loop"] = Napi::Boolean::New(env, static_cast<bool>(hcainfo.loop));
+  if (hcainfo.loop) {
+    ret["loopStart"] = Napi::Number::New(env, hcainfo.loopStart);
+    ret["loopEnd"] = Napi::Number::New(env, hcainfo.loopEnd);
+    ret["loopCount"] = Napi::Number::New(env, hcainfo.loopCount);
+    ret["loop1"] = Napi::Number::New(env, hcainfo.loop1);
+    ret["loopInfinite"] = Napi::Boolean::New(env, hcainfo.loopCount == 0x80);
+  }
+  ret["ciphType"] = Napi::Number::New(env, hcainfo.ciphType);
+  ret["rvaVolume"] = Napi::Number::New(env, hcainfo.rvaVolume);
+
+  return ret;
 }
 
 static Napi::Object _index (Napi::Env env, Napi::Object exports) {
