@@ -4,7 +4,7 @@
       "name": "Win32",
       "includePath": [
         "${workspaceFolder}/node_modules/node-addon-api",
-        "${env:HOME}/AppData/Local/node-gyp/Cache/14.15.1/include/node"
+        "${env:HOME}/AppData/Local/node-gyp/Cache/14.16.0/include/node"
       ],
       "defines": [
         "_DEBUG",

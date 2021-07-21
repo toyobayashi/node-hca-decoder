@@ -1,5 +1,12 @@
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#endif
+
 #include <napi.h>
-#include "clHCA.h"
+#include "HCADecodeService.h"
 #include <stdio.h>
 
 class HCADecoder : public Napi::ObjectWrap<HCADecoder> {
@@ -8,11 +15,11 @@ public:
   HCADecoder(const Napi::CallbackInfo &info);
   virtual ~HCADecoder();
 
-  clHCA* hca();
+  HCADecodeService* hca();
 
 private:
   static Napi::FunctionReference _constructor;
-  clHCA* _hca;
+  HCADecodeService* _hca;
   
   unsigned int ciphKey1;
   unsigned int ciphKey2;
@@ -25,31 +32,73 @@ private:
 
 class HCAAsyncWorker : public Napi::AsyncWorker {
 public:
-  HCAAsyncWorker(clHCA*, const std::string&, const std::string&, double, int, int, const Napi::Function&);
+  HCAAsyncWorker(
+    HCADecodeService* hca,
+    const std::string& hcaFile,
+    const std::string& wav,
+    unsigned int ciphKey1,
+    unsigned int ciphKey2,
+    double volume,
+    int mode,
+    int loop,
+    const Napi::Function& callback
+  );
   void Execute();
   void OnOK();
 private:
-  clHCA _hca;
+  HCADecodeService* _hca;
   std::string _hcaFile;
   std::string _wavFile;
-  double _volumn;
+  unsigned int _ciphKey1;
+  unsigned int _ciphKey2;
+  double _volume;
   int _mode;
-  // int _loop;
+  int _loop;
   bool _res;
 };
 
-HCAAsyncWorker::HCAAsyncWorker(clHCA* hca, const std::string& hcaFile, const std::string& wav, double volumn, int mode, int loop, const Napi::Function& callback): Napi::AsyncWorker(callback) {
-  _hca = *hca;
+HCAAsyncWorker::HCAAsyncWorker(
+  HCADecodeService* hca,
+  const std::string& hcaFile,
+  const std::string& wav,
+  unsigned int ciphKey1,
+  unsigned int ciphKey2,
+  double volume,
+  int mode,
+  int loop,
+  const Napi::Function& callback
+): Napi::AsyncWorker(callback) {
+  _hca = hca;
   _hcaFile = hcaFile;
   _wavFile = wav;
-  _volumn = volumn;
+  _ciphKey1 = ciphKey1;
+  _ciphKey2 = ciphKey2;
+  _volume = volume;
   _mode = mode;
-  // _loop = loop;
+  _loop = loop;
   _res = false;
 }
 
 void HCAAsyncWorker::Execute() {
-  _res = _hca.DecodeToWavefile(_hcaFile.c_str(), _wavFile.c_str(), _volumn, _mode, /* _loop */0);
+  auto r = _hca->decode(_hcaFile.c_str(), 0, _ciphKey1, _ciphKey2, 0, _volume, _mode, _loop);
+  if (!r.first) return;
+  FILE* w;
+
+#ifdef _WIN32
+  wchar_t strUnicode[260];
+  MultiByteToWideChar(CP_UTF8, 0, _wavFile.c_str(), -1, strUnicode, 260);
+  w = _wfopen(strUnicode, L"wb");
+#else
+  w = fopen(_wavFile.c_str(), "wb");
+#endif
+  if (!w) {
+    delete r.first;
+    return;
+  } 
+  fwrite(r.first, 1, r.second, w);
+  fclose(w);
+  delete r.first;
+  _res = true;
 }
 
 void HCAAsyncWorker::OnOK() {
@@ -91,12 +140,12 @@ HCADecoder::HCADecoder(const Napi::CallbackInfo &info) : Napi::ObjectWrap<HCADec
   size_t argc = info.Length();
 
   if (argc < 1) {
-    _hca = new clHCA(ciphKey1, ciphKey2);
+    _hca = new HCADecodeService(0);
   } else if (argc < 2) {
     if (info[0].IsNumber()) {
       ciphKey1 = info[0].As<Napi::Number>().Uint32Value();
     }
-    _hca = new clHCA(ciphKey1, ciphKey2);
+    _hca = new HCADecodeService(0);
   } else {
     if (info[0].IsNumber()) {
       ciphKey1 = info[0].As<Napi::Number>().Uint32Value();
@@ -105,7 +154,7 @@ HCADecoder::HCADecoder(const Napi::CallbackInfo &info) : Napi::ObjectWrap<HCADec
     if (info[1].IsNumber()) {
       ciphKey2 = info[1].As<Napi::Number>().Uint32Value();
     }
-    _hca = new clHCA(ciphKey1, ciphKey2);
+    _hca = new HCADecodeService(0);
   }
 }
 
@@ -116,7 +165,7 @@ HCADecoder::~HCADecoder() {
   }
 }
 
-clHCA* HCADecoder::hca() {
+HCADecodeService* HCADecoder::hca() {
   return _hca;
 }
 
@@ -127,8 +176,8 @@ Napi::Value HCADecoder::_printInfo(const Napi::CallbackInfo &info){
     return Napi::Boolean::New(env, false);
   }
 
-  if (info[0].IsString() && _hca) {
-    return Napi::Boolean::New(env, _hca->PrintInfo(info[0].As<Napi::String>().Utf8Value().c_str()));
+  if (info[0].IsString()) {
+    return Napi::Boolean::New(env, HCADecodeService::print_info(info[0].As<Napi::String>().Utf8Value().c_str(), ciphKey1, ciphKey2));
   }
 
   return Napi::Boolean::New(env, false);
@@ -193,9 +242,9 @@ Napi::Value HCADecoder::_decodeToWaveFile(const Napi::CallbackInfo &info){
         case 3:
           if (info[i].IsNumber()) mode = info[i].As<Napi::Number>().Int32Value();
           break;
-        // case 4:
-        //   if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
-        //   break;
+        case 4:
+          if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
+          break;
         default:
           break;
       }
@@ -205,7 +254,7 @@ Napi::Value HCADecoder::_decodeToWaveFile(const Napi::CallbackInfo &info){
     callback = Napi::Function::New(env, noop);
   }
 
-  HCAAsyncWorker* worker = new HCAAsyncWorker(_hca, hca, wav, volumn, mode, loop, callback);
+  HCAAsyncWorker* worker = new HCAAsyncWorker(_hca, hca, wav, ciphKey1, ciphKey2, volumn, mode, loop, callback);
   worker->Queue();
 
   return env.Undefined();
@@ -247,20 +296,34 @@ Napi::Value HCADecoder::_decodeToWaveFileSync(const Napi::CallbackInfo &info){
       case 3:
         if (info[i].IsNumber()) mode = info[i].As<Napi::Number>().Int32Value();
         break;
-      // case 4:
-      //   if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
-      //   break;
+      case 4:
+        if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
+        break;
       default:
         break;
     }
   }
 
-  bool res = _hca->DecodeToWavefile(hca.c_str(), wav.c_str(), volumn, mode, loop);
-  if (!res) {
+  auto res = _hca->decode(hca.c_str(), 0, ciphKey1, ciphKey2, 0, volumn, mode, loop);
+  if (!res.first) {
     Napi::Error::New(env, hca + " decode failed.").ThrowAsJavaScriptException();
     return Napi::String::New(env, "");
   }
-
+  FILE* w;
+#ifdef _WIN32
+  wchar_t strUnicode[260];
+  MultiByteToWideChar(CP_UTF8, 0, wav.c_str(), -1, strUnicode, 260);
+  w = _wfopen(strUnicode, L"wb");
+#else
+  w = fopen(wav.c_str(), "wb");
+#endif
+  if (!w) {
+    delete res.first;
+    return Napi::String::New(env, "");
+  } 
+  fwrite(res.first, 1, res.second, w);
+  fclose(w);
+  delete res.first;
   return Napi::String::New(env, wav);
 }
 
