@@ -4,8 +4,6 @@
 
 HCA decoder based on [Nyagamon/HCADecoder](https://github.com/Nyagamon/HCADecoder)
 
-Require Node.js >= 8.6 (NAPI Async Worker)
-
 ## Usage
 
 ``` js
@@ -13,14 +11,17 @@ const { HCADecoder } = require('hca-decoder')
 const hca = new HCADecoder(/* ciphKey1, ciphKey2 */)
 const filenameHCA = 'path/to/somefile.hca'
 
-hca.decodeToWaveFile(filenameHCA/* , filenameWAV, volume, mode, (err, wavFilePath) => {} */)
+hca.decodeToWaveFile(filenameHCA/* , filenameWAV, volume, mode, loop, (err, wavFilePath) => {} */)
 // => undefined (Async)
 
-hca.decodeToWaveFileSync(filenameHCA/* , filenameWAV, volume, mode */)
+hca.decodeToWaveFileSync(filenameHCA/* , filenameWAV, volume, mode, loop */)
 // => boolean
 
 hca.printInfo(filenameHCA)
 // => undefined
+
+HCADecoder.getInfo(filenameHCA)
+// => HCAInfo
 ```
 
 ## Test
