@@ -1,11 +1,9 @@
 {
   "name": "hca-decoder",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "HCA Decoder in Node.js",
-  "main": "./index.js",
-  "engines": {
-    "node": ">=8.6.0"
-  },
+  "main": "index.js",
+  "typings": "index.d.ts",
   "scripts": {
     "test": "mocha test",
     "build": "node-gyp rebuild",
