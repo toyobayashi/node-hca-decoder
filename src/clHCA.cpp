@@ -533,13 +533,13 @@ bool clHCA::DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float v
   wavRiff.fmtSamplesPerSec = wavRiff.fmtSamplingRate*wavRiff.fmtSamplingSize;
   if (_loopFlg) {
     wavSmpl.samplePeriod = (unsigned int)(1 / (double)wavRiff.fmtSamplingRate * 1000000000);
-    wavSmpl.loop_Start = _loopStart * 0x80 * 8 + _muteFooter; //[!] Unknown
-    wavSmpl.loop_End = (_loopEnd + 1) * 0x80 * 8 - 1; //[!] Unknown
+    wavSmpl.loop_Start = _loopStart << 10;
+    wavSmpl.loop_End = _loopEnd << 10;
     wavSmpl.loop_PlayCount = (_loopCount == 0x80) ? 0 : _loopCount;
   }
   else if (loop) {
     wavSmpl.loop_Start = 0;
-    wavSmpl.loop_End = (_blockCount + 1) * 0x80 * 8 - 1; //[!] Unknown
+    wavSmpl.loop_End = _blockCount << 10;
     _loopStart = 0;
     _loopEnd = _blockCount;
   }
@@ -547,7 +547,7 @@ bool clHCA::DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float v
     wavNote.noteSize = 4 + _comm_len + 1;
     if (wavNote.noteSize & 3)wavNote.noteSize += 4 - (wavNote.noteSize & 3);
   }
-  wavData.dataSize = _blockCount * 0x80 * 8 * wavRiff.fmtSamplingSize + (wavSmpl.loop_End - wavSmpl.loop_Start)*loop;
+  wavData.dataSize = wavRiff.fmtSamplingSize*((_blockCount << 10) + (wavSmpl.loop_End - wavSmpl.loop_Start) * loop);
   wavRiff.riffSize = 0x1C + ((_loopFlg && !loop) ? sizeof(wavSmpl) : 0) + (_comm_comment ? 8 + wavNote.noteSize : 0) + sizeof(wavData) + wavData.dataSize;
   fwrite(&wavRiff, sizeof(wavRiff), 1, fp2);
   if (_loopFlg && !loop)fwrite(&wavSmpl, sizeof(wavSmpl), 1, fp2);
@@ -925,21 +925,39 @@ bool clHCA::Decode(void *data, unsigned int size, unsigned int address) {
 
     // loop
     if ((*(unsigned int *)s & 0x7F7F7F7F) == 0x706F6F6C) {
-      stLoop *loop = (stLoop *)s; s += sizeof(stLoop);
-      _loopStart = bswap(loop->start);
-      _loopEnd = bswap(loop->end);
-      _loopCount = bswap(loop->count);
-      _loop_r01 = bswap(loop->r01);
-      _loopFlg = true;
-      if (!(_loopStart >= 0 && _loopStart <= _loopEnd&&_loopEnd<_blockCount))return false;
+        stLoop *loop = (stLoop *)s; s += sizeof(stLoop);
+        _loopStart = bswap(loop->start);
+        _loopEnd = bswap(loop->end);
+        _loopCount = bswap(loop->count);
+        _loop_r01 = bswap(loop->r01);
+        _loopFlg = true;
+        if (!(_loopStart <= _loopEnd && _loopEnd<_blockCount))return false;
     }
     else {
-      _loopStart = 0;
-      _loopEnd = 0;
-      _loopCount = 0;
-      _loop_r01 = 0x400;
-      _loopFlg = false;
+        _loopStart = 0;
+        _loopEnd = 0;
+        _loopCount = 0;
+        _loop_r01 = 0x400;
+        _loopFlg = false;
     }
+
+    // loop
+    // if ((*(unsigned int *)s & 0x7F7F7F7F) == 0x706F6F6C) {
+    //   stLoop *loop = (stLoop *)s; s += sizeof(stLoop);
+    //   _loopStart = bswap(loop->start);
+    //   _loopEnd = bswap(loop->end);
+    //   _loopCount = bswap(loop->count);
+    //   _loop_r01 = bswap(loop->r01);
+    //   _loopFlg = true;
+    //   if (!(_loopStart >= 0 && _loopStart <= _loopEnd&&_loopEnd<_blockCount))return false;
+    // }
+    // else {
+    //   _loopStart = 0;
+    //   _loopEnd = 0;
+    //   _loopCount = 0;
+    //   _loop_r01 = 0x400;
+    //   _loopFlg = false;
+    // }
 
     // ciph
     if ((*(unsigned int *)s & 0x7F7F7F7F) == 0x68706963) {

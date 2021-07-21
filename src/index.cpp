@@ -34,7 +34,7 @@ private:
   std::string _wavFile;
   double _volumn;
   int _mode;
-  // int _loop;
+  int _loop;
   bool _res;
 };
 
@@ -44,12 +44,12 @@ HCAAsyncWorker::HCAAsyncWorker(clHCA* hca, const std::string& hcaFile, const std
   _wavFile = wav;
   _volumn = volumn;
   _mode = mode;
-  // _loop = loop;
+  _loop = loop;
   _res = false;
 }
 
 void HCAAsyncWorker::Execute() {
-  _res = _hca.DecodeToWavefile(_hcaFile.c_str(), _wavFile.c_str(), _volumn, _mode, /* _loop */0);
+  _res = _hca.DecodeToWavefile(_hcaFile.c_str(), _wavFile.c_str(), _volumn, _mode, _loop);
 }
 
 void HCAAsyncWorker::OnOK() {
@@ -193,9 +193,9 @@ Napi::Value HCADecoder::_decodeToWaveFile(const Napi::CallbackInfo &info){
         case 3:
           if (info[i].IsNumber()) mode = info[i].As<Napi::Number>().Int32Value();
           break;
-        // case 4:
-        //   if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
-        //   break;
+        case 4:
+          if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
+          break;
         default:
           break;
       }
@@ -247,9 +247,9 @@ Napi::Value HCADecoder::_decodeToWaveFileSync(const Napi::CallbackInfo &info){
       case 3:
         if (info[i].IsNumber()) mode = info[i].As<Napi::Number>().Int32Value();
         break;
-      // case 4:
-      //   if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
-      //   break;
+      case 4:
+        if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
+        break;
       default:
         break;
     }
