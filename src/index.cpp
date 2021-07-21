@@ -289,40 +289,47 @@ Napi::Value HCADecoder::_getInfo(const Napi::CallbackInfo &info) {
   ret["muteFooter"] = Napi::Number::New(env, hcainfo.muteFooter);
 
   if (hcainfo.comp) {
+    Napi::Object comp = Napi::Object::New(env);
     ret["bitRate"] = Napi::Number::New(env, hcainfo.bitRate);
     ret["blockSize"] = Napi::Number::New(env, hcainfo.blockSize);
-    ret["comp1"] = Napi::Number::New(env, hcainfo.comp1);
-    ret["comp2"] = Napi::Number::New(env, hcainfo.comp2);
-    ret["comp3"] = Napi::Number::New(env, hcainfo.comp3);
-    ret["comp4"] = Napi::Number::New(env, hcainfo.comp4);
-    ret["comp5"] = Napi::Number::New(env, hcainfo.comp5);
-    ret["comp6"] = Napi::Number::New(env, hcainfo.comp6);
-    ret["comp7"] = Napi::Number::New(env, hcainfo.comp7);
-    ret["comp8"] = Napi::Number::New(env, hcainfo.comp8);
+    comp["comp1"] = Napi::Number::New(env, hcainfo.comp1);
+    comp["comp2"] = Napi::Number::New(env, hcainfo.comp2);
+    comp["comp3"] = Napi::Number::New(env, hcainfo.comp3);
+    comp["comp4"] = Napi::Number::New(env, hcainfo.comp4);
+    comp["comp5"] = Napi::Number::New(env, hcainfo.comp5);
+    comp["comp6"] = Napi::Number::New(env, hcainfo.comp6);
+    comp["comp7"] = Napi::Number::New(env, hcainfo.comp7);
+    comp["comp8"] = Napi::Number::New(env, hcainfo.comp8);
+    ret["comp"] = comp;
   }
   if (hcainfo.dec) {
+    Napi::Object dec = Napi::Object::New(env);
     ret["bitRate"] = Napi::Number::New(env, hcainfo.bitRate);
     ret["blockSize"] = Napi::Number::New(env, hcainfo.blockSize);
-    ret["dec1"] = Napi::Number::New(env, hcainfo.dec1);
-    ret["dec2"] = Napi::Number::New(env, hcainfo.dec2);
-    ret["dec3"] = Napi::Number::New(env, hcainfo.dec3);
-    ret["dec4"] = Napi::Number::New(env, hcainfo.dec4);
-    ret["dec5"] = Napi::Number::New(env, hcainfo.dec5);
-    ret["dec6"] = Napi::Number::New(env, hcainfo.dec6);
-    ret["dec7"] = Napi::Number::New(env, hcainfo.dec7);
+    dec["dec1"] = Napi::Number::New(env, hcainfo.dec1);
+    dec["dec2"] = Napi::Number::New(env, hcainfo.dec2);
+    dec["dec3"] = Napi::Number::New(env, hcainfo.dec3);
+    dec["dec4"] = Napi::Number::New(env, hcainfo.dec4);
+    dec["dec5"] = Napi::Number::New(env, hcainfo.dec5);
+    dec["dec6"] = Napi::Number::New(env, hcainfo.dec6);
+    dec["dec7"] = Napi::Number::New(env, hcainfo.dec7);
+    ret["dec"] = dec;
   }
   if (hcainfo.vbr) {
-    ret["vbr1"] = Napi::Number::New(env, hcainfo.vbr1);
-    ret["vbr2"] = Napi::Number::New(env, hcainfo.vbr2);
+    Napi::Object vbr = Napi::Object::New(env);
+    vbr["vbr1"] = Napi::Number::New(env, hcainfo.vbr1);
+    vbr["vbr2"] = Napi::Number::New(env, hcainfo.vbr2);
+    ret["vbr"] = vbr;
   }
   ret["athType"] = Napi::Number::New(env, hcainfo.athType);
-  ret["loop"] = Napi::Boolean::New(env, static_cast<bool>(hcainfo.loop));
   if (hcainfo.loop) {
-    ret["loopStart"] = Napi::Number::New(env, hcainfo.loopStart);
-    ret["loopEnd"] = Napi::Number::New(env, hcainfo.loopEnd);
-    ret["loopCount"] = Napi::Number::New(env, hcainfo.loopCount);
-    ret["loop1"] = Napi::Number::New(env, hcainfo.loop1);
-    ret["loopInfinite"] = Napi::Boolean::New(env, hcainfo.loopCount == 0x80);
+    Napi::Object loop = Napi::Object::New(env);
+    loop["start"] = Napi::Number::New(env, hcainfo.loopStart);
+    loop["end"] = Napi::Number::New(env, hcainfo.loopEnd);
+    loop["count"] = Napi::Number::New(env, hcainfo.loopCount);
+    loop["loop1"] = Napi::Number::New(env, hcainfo.loop1);
+    loop["infinite"] = Napi::Boolean::New(env, hcainfo.loopCount == 0x80);
+    ret["loop"] = loop;
   }
   ret["ciphType"] = Napi::Number::New(env, hcainfo.ciphType);
   ret["rvaVolume"] = Napi::Number::New(env, hcainfo.rvaVolume);

@@ -165,4 +165,16 @@ describe('HCADecoder class', function () {
     assert.ok(hd.decodeToWaveFileSync(getPath('assets/test/decodeToWaveFileSync/2.hca'), null, 0.2) === getPath('assets/test/decodeToWaveFileSync/2.wav'))
     assert.ok(hd.decodeToWaveFileSync(getPath('assets/test/decodeToWaveFileSync/3.hca'), null, 1, 8) === getPath('assets/test/decodeToWaveFileSync/3.wav'))
   })
+
+  it('$getInfo', function () {
+    this.timeout(Infinity)
+    assert.ok(typeof HCADecoder.getInfo === 'function')
+    fs.mkdirsSync(getPath('assets/test/getInfo'))
+    fs.copySync(getPath('assets/origin/1.hca'), getPath('assets/test/getInfo/1.hca'))
+
+    const info = HCADecoder.getInfo(getPath('assets/test/getInfo/1.hca'))
+    assert.ok(typeof info === 'object' && info !== null)
+    assert.ok(typeof info.loop === 'object' && info.loop !== null)
+    console.log(info)
+  })
 })

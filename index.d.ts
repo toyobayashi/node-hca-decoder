@@ -8,33 +8,40 @@ export interface HCAInfo {
   muteHeader: number
   muteFooter: number
   athType: number
-  loop: boolean
   ciphType: number
   rvaVolume: number
   bitRate?: number
   blockSize?: number
-  comp1?: number
-  comp2?: number
-  comp3?: number
-  comp4?: number
-  comp5?: number
-  comp6?: number
-  comp7?: number
-  comp8?: number
-  dec1?: number
-  dec2?: number
-  dec3?: number
-  dec4?: number
-  dec5?: number
-  dec6?: number
-  dec7?: number
-  vbr1?: number
-  vbr2?: number
-  loopStart?: number
-  loopEnd?: number
-  loopCount?: number
-  loop1?: number
-  loopInfinite?: boolean
+  comp?: {
+    comp1: number
+    comp2: number
+    comp3: number
+    comp4: number
+    comp5: number
+    comp6: number
+    comp7: number
+    comp8: number
+  }
+  dec?: {
+    dec1: number
+    dec2: number
+    dec3: number
+    dec4: number
+    dec5: number
+    dec6: number
+    dec7: number
+  }
+  vbr?: {
+    vbr1: number
+    vbr2: number
+  }
+  loop?: {
+    start: number
+    end: number
+    count: number
+    loop1: number
+    infinite: boolean
+  }
 }
 
 export declare class HCADecoder {
