@@ -203,9 +203,15 @@ Napi::Value HCADecoder::_decodeToWaveFile(const Napi::CallbackInfo &info){
           hca = info[i].As<Napi::String>().Utf8Value();
           wav = hca.find_last_of(".") == std::string::npos ? (hca + ".wav") : (hca.substr(0, hca.find_last_of(".")) + ".wav");
           break;
-        case 1:
-          if (info[i].IsString()) wav = info[i].As<Napi::String>().Utf8Value();
+        case 1: {
+          if (info[i].IsString()) {
+            std::string path = info[i].As<Napi::String>().Utf8Value();
+            if (path != "") {
+              wav = path;
+            }
+          }
           break;
+        }
         case 2:
           if (info[i].IsNumber()) volumn = info[i].As<Napi::Number>().DoubleValue();
           break;
@@ -257,9 +263,15 @@ Napi::Value HCADecoder::_decodeToWaveFileSync(const Napi::CallbackInfo &info){
         hca = info[i].As<Napi::String>().Utf8Value();
         wav = hca.find_last_of(".") == std::string::npos ? (hca + ".wav") : (hca.substr(0, hca.find_last_of(".")) + ".wav");
         break;
-      case 1:
-        if (info[i].IsString()) wav = info[i].As<Napi::String>().Utf8Value();
+      case 1: {
+        if (info[i].IsString()) {
+          std::string path = info[i].As<Napi::String>().Utf8Value();
+          if (path != "") {
+            wav = path;
+          }
+        }
         break;
+      }
       case 2:
         if (info[i].IsNumber()) volumn = info[i].As<Napi::Number>().DoubleValue();
         break;

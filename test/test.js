@@ -166,6 +166,55 @@ describe('HCADecoder class', function () {
     assert.ok(hd.decodeToWaveFileSync(getPath('assets/test/decodeToWaveFileSync/3.hca'), null, 1, 8) === getPath('assets/test/decodeToWaveFileSync/3.wav'))
   })
 
+  it('#decodeToMemory Promise All', function (done) {
+    this.timeout(Infinity)
+    fs.mkdirsSync(getPath('assets/test/decodeToMemoryPromiseAll'))
+    fs.copySync(getPath('assets/origin/1.hca'), getPath('assets/test/decodeToMemoryPromiseAll/1.hca'))
+    fs.copySync(getPath('assets/origin/2.hca'), getPath('assets/test/decodeToMemoryPromiseAll/2.hca'))
+    fs.copySync(getPath('assets/origin/3.hca'), getPath('assets/test/decodeToMemoryPromiseAll/3.hca'))
+
+    const decode = (hd, hca) => {
+      return new Promise((resolve, reject) => {
+        hd.decodeToMemory(hca, function (err, buf) {
+          if (err) reject(err)
+          else resolve(buf)
+        })
+      })
+    }
+
+    Promise.all([
+      decode(hd, getPath('assets/test/decodeToMemoryPromiseAll/1.hca')),
+      decode(hd, getPath('assets/test/decodeToMemoryPromiseAll/2.hca')),
+      decode(hd, getPath('assets/test/decodeToMemoryPromiseAll/3.hca'))
+    ]).then(([a, b, c]) => {
+      assert.ok(Buffer.isBuffer(a))
+      assert.ok(Buffer.isBuffer(b))
+      assert.ok(Buffer.isBuffer(c))
+      fs.writeFileSync(getPath('assets/test/decodeToMemoryPromiseAll/1.wav'), a)
+      fs.writeFileSync(getPath('assets/test/decodeToMemoryPromiseAll/2.wav'), b)
+      fs.writeFileSync(getPath('assets/test/decodeToMemoryPromiseAll/3.wav'), c)
+      done()
+    }).catch(err => {
+      done(err)
+    })
+  })
+
+  it('#decodeToMemorySync', function () {
+    this.timeout(Infinity)
+    fs.mkdirsSync(getPath('assets/test/decodeToMemorySync'))
+    fs.copySync(getPath('assets/origin/1.hca'), getPath('assets/test/decodeToMemorySync/1.hca'))
+    fs.copySync(getPath('assets/origin/2.hca'), getPath('assets/test/decodeToMemorySync/2.hca'))
+    fs.copySync(getPath('assets/origin/3.hca'), getPath('assets/test/decodeToMemorySync/3.hca'))
+
+    let a, b, c
+    assert.ok(Buffer.isBuffer(a = hd.decodeToMemorySync(getPath('assets/test/decodeToMemorySync/1.hca'))))
+    assert.ok(Buffer.isBuffer(b = hd.decodeToMemorySync(getPath('assets/test/decodeToMemorySync/2.hca'), 0.2)))
+    assert.ok(Buffer.isBuffer(c = hd.decodeToMemorySync(getPath('assets/test/decodeToMemorySync/3.hca'), 1, 8)))
+    fs.writeFileSync(getPath('assets/test/decodeToMemorySync/1.wav'), a)
+    fs.writeFileSync(getPath('assets/test/decodeToMemorySync/2.wav'), b)
+    fs.writeFileSync(getPath('assets/test/decodeToMemorySync/3.wav'), c)
+  })
+
   it('$getInfo', function () {
     this.timeout(Infinity)
     assert.ok(typeof HCADecoder.getInfo === 'function')
