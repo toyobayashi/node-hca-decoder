@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <memory.h>
 
-#include "HCAFileStream.h"
-
 clHCA::clHCA(unsigned int ciphKey1, unsigned int ciphKey2) :
   _ciph_key1(ciphKey1), _ciph_key2(ciphKey2), _ath(), _cipher() {}
 
@@ -408,6 +406,17 @@ bool clHCA::Decrypt(const char *filenameHCA) {
 
   return true;
 }
+bool clHCA::DecodeToMemory(const char *filenameHCA, HCAFileStream& stream, float volume, int mode, int loop) {
+  if (!(filenameHCA))return false;
+
+  FILE *fp = HCAFileStream::OpenFile(filenameHCA, "rb");
+  if (!fp) return false;
+  if (!DecodeToWavefileStream(fp, stream, volume, mode, loop)) { fclose(fp); return false; }
+
+  fclose(fp);
+
+  return true;
+}
 
 bool clHCA::DecodeToWavefile(const char *filenameHCA, const char *filenameWAV, float volume, int mode, int loop) {
   if (!(filenameHCA))return false;
@@ -415,15 +424,21 @@ bool clHCA::DecodeToWavefile(const char *filenameHCA, const char *filenameWAV, f
   FILE *fp = HCAFileStream::OpenFile(filenameHCA, "rb");
   if (!fp) return false;
 
-  if (!DecodeToWavefileStream(fp, filenameWAV, volume, mode, loop)) { fclose(fp); return false; }
+  HCAFileStream stream = HCAFileStream::Open(filenameWAV, "wb");
+  if (!stream) {
+    fclose(fp);
+    return false;
+  }
+  if (!DecodeToWavefileStream(fp, stream, volume, mode, loop)) { fclose(fp); stream.Close(); return false; }
 
   fclose(fp);
+  stream.Close();
 
   return true;
 }
-bool clHCA::DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float volume, int mode, int loop) {
+bool clHCA::DecodeToWavefileStream(void *fpHCA, HCAFileStream& stream, float volume, int mode, int loop) {
 
-  if (!(fpHCA&&filenameWAV && (mode == 0 || mode == 8 || mode == 16 || mode == 24 || mode == 32) && loop >= 0))return false;
+  if (!(fpHCA&&stream && (mode == 0 || mode == 8 || mode == 16 || mode == 24 || mode == 32) && loop >= 0))return false;
 
   FILE *fp1 = (FILE *)fpHCA;
   unsigned int address = ftell(fp1);
@@ -440,8 +455,8 @@ bool clHCA::DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float v
   fread(data1, header.dataOffset, 1, fp1);
   if (!Decode(data1, header.dataOffset, 0)) { delete[] data1; return false; }
 
-  FILE *fp2 = HCAFileStream::OpenFile(filenameWAV, "wb");
-  if (!fp2) { delete[] data1; return false; }
+  // FILE *fp2 = HCAFileStream::OpenFile(filenameWAV, "wb");
+  // if (!fp2) { delete[] data1; return false; }
 
   struct stWAVEHeader {
     char riff[4];
@@ -508,19 +523,26 @@ bool clHCA::DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float v
   }
   wavData.dataSize = wavRiff.fmtSamplingSize*((_blockCount << 10) + (wavSmpl.loop_End - wavSmpl.loop_Start) * loop);
   wavRiff.riffSize = 0x1C + ((_loopFlg && !loop) ? sizeof(wavSmpl) : 0) + (_comm_comment ? 8 + wavNote.noteSize : 0) + sizeof(wavData) + wavData.dataSize;
-  fwrite(&wavRiff, sizeof(wavRiff), 1, fp2);
-  if (_loopFlg && !loop)fwrite(&wavSmpl, sizeof(wavSmpl), 1, fp2);
-  if (_comm_comment) {
-    int address = ftell(fp2);
-    fwrite(&wavNote, sizeof(wavNote), 1, fp2);
-    fputs(_comm_comment, fp2);
-    fseek(fp2, address + 8 + wavNote.noteSize, SEEK_SET);
+  // fwrite(&wavRiff, sizeof(wavRiff), 1, fp2);
+  stream.Write(&wavRiff, sizeof(wavRiff), 1);
+  if (_loopFlg && !loop) {
+    // fwrite(&wavSmpl, sizeof(wavSmpl), 1, fp2);
+    stream.Write(&wavSmpl, sizeof(wavSmpl), 1);
   }
-  fwrite(&wavData, sizeof(wavData), 1, fp2);
-
+  if (_comm_comment) {
+    int address = stream.Tell();
+    // fwrite(&wavNote, sizeof(wavNote), 1, fp2);
+    // fputs(_comm_comment, fp2);
+    // fseek(fp2, address + 8 + wavNote.noteSize, SEEK_SET);
+    stream.Write(&wavNote, sizeof(wavNote), 1);
+    stream.Puts(_comm_comment);
+    stream.Seek(address + 8 + wavNote.noteSize, SEEK_SET);
+  }
+  // fwrite(&wavData, sizeof(wavData), 1, fp2);
+  stream.Write(&wavData, sizeof(wavData), 1);
   _rva_volume *= volume;
 
-    void (*modeFunction)(float, void *) = NULL;
+    void (*modeFunction)(float, HCAFileStream&) = NULL;
     modeFunction = DecodeToWavefile_DecodeMode16bit;
   switch (mode) {
   case 0:modeFunction = DecodeToWavefile_DecodeModeFloat; break;
@@ -530,27 +552,25 @@ bool clHCA::DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float v
   case 32:modeFunction = DecodeToWavefile_DecodeMode32bit; break;
   }
   unsigned char *data2 = new unsigned char[_blockSize];
-  if (!data2) { delete[] data1; fclose(fp2); return false; }
+  if (!data2) { delete[] data1; stream.Close(); return false; }
   if (!loop) {
-    if (!DecodeToWavefile_Decode(fp1, fp2, address + _dataOffset, _blockCount, data2, modeFunction)) { delete[] data2; delete[] data1; fclose(fp2); return false; }
+    if (!DecodeToWavefile_Decode(fp1, stream, address + _dataOffset, _blockCount, data2, modeFunction)) { delete[] data2; delete[] data1; return false; }
   }
   else {
     unsigned int loopBlockOffset = _dataOffset + _loopStart*_blockSize;
     unsigned int loopBlockCount = _loopEnd - _loopStart;
-    if (!DecodeToWavefile_Decode(fp1, fp2, address + _dataOffset, _loopEnd, data2, modeFunction)) { delete[] data2; delete[] data1; fclose(fp2); return false; }
+    if (!DecodeToWavefile_Decode(fp1, stream, address + _dataOffset, _loopEnd, data2, modeFunction)) { delete[] data2; delete[] data1; return false; }
     for (int i = 1; i<loop; i++) {
-      if (!DecodeToWavefile_Decode(fp1, fp2, address + loopBlockOffset, loopBlockCount, data2, modeFunction)) { delete[] data2; delete[] data1; fclose(fp2); return false; }
+      if (!DecodeToWavefile_Decode(fp1, stream, address + loopBlockOffset, loopBlockCount, data2, modeFunction)) { delete[] data2; delete[] data1; return false; }
     }
-    if (!DecodeToWavefile_Decode(fp1, fp2, address + loopBlockOffset, _blockCount - _loopStart, data2, modeFunction)) { delete[] data2; delete[] data1; fclose(fp2); return false; }
+    if (!DecodeToWavefile_Decode(fp1, stream, address + loopBlockOffset, _blockCount - _loopStart, data2, modeFunction)) { delete[] data2; delete[] data1; return false; }
   }
   delete[] data2;
   delete[] data1;
 
-  fclose(fp2);
-
   return true;
 }
-bool clHCA::DecodeToWavefile_Decode(void *fp1, void *fp2, unsigned int address, unsigned int count, void *data, void (*modeFunction)(float, void*)) {
+bool clHCA::DecodeToWavefile_Decode(void *fp1, HCAFileStream& stream, unsigned int address, unsigned int count, void *data, void (*modeFunction)(float, HCAFileStream&)) {
   float f;
   fseek((FILE *)fp1, address, SEEK_SET);
   for (unsigned int l = 0; l<count; l++, address += _blockSize) {
@@ -562,18 +582,18 @@ bool clHCA::DecodeToWavefile_Decode(void *fp1, void *fp2, unsigned int address, 
           f = _channel[k].wave[i][j] * _rva_volume;
           if (f>1) { f = 1; }
           else if (f<-1) { f = -1; }
-          ((void(*)(float, void *))modeFunction)(f, fp2);
+          ((void(*)(float, HCAFileStream&))modeFunction)(f, stream);
         }
       }
     }
   }
   return true;
 }
-void clHCA::DecodeToWavefile_DecodeModeFloat(float f, void *fp) { fwrite(&f, sizeof(f), 1, (FILE *)fp); }
-void clHCA::DecodeToWavefile_DecodeMode8bit(float f, void *fp) { int v = (int)(f * 0x7F) + 0x80; fwrite(&v, 1, 1, (FILE *)fp); }
-void clHCA::DecodeToWavefile_DecodeMode16bit(float f, void *fp) { int v = (int)(f * 0x7FFF); fwrite(&v, 2, 1, (FILE *)fp); }
-void clHCA::DecodeToWavefile_DecodeMode24bit(float f, void *fp) { int v = (int)(f * 0x7FFFFF); fwrite(&v, 3, 1, (FILE *)fp); }
-void clHCA::DecodeToWavefile_DecodeMode32bit(float f, void *fp) { int v = (int)(f * 0x7FFFFFFF); fwrite(&v, 4, 1, (FILE *)fp); }
+void clHCA::DecodeToWavefile_DecodeModeFloat(float f, HCAFileStream& stream) { stream.Write(&f, sizeof(f), 1); }
+void clHCA::DecodeToWavefile_DecodeMode8bit(float f, HCAFileStream& stream) { int v = (int)(f * 0x7F) + 0x80; stream.Write(&v, 1, 1); }
+void clHCA::DecodeToWavefile_DecodeMode16bit(float f, HCAFileStream& stream) { int v = (int)(f * 0x7FFF); stream.Write(&v, 2, 1); }
+void clHCA::DecodeToWavefile_DecodeMode24bit(float f, HCAFileStream& stream) { int v = (int)(f * 0x7FFFFF); stream.Write(&v, 3, 1); }
+void clHCA::DecodeToWavefile_DecodeMode32bit(float f, HCAFileStream& stream) { int v = (int)(f * 0x7FFFFFFF); stream.Write(&v, 4, 1); }
 
 /*bool clHCA::EncodeFromWavefile(const char *filenameWAV,const char *filenameHCA,float volume){
 

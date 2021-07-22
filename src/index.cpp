@@ -18,6 +18,7 @@ private:
   // Napi::Value _decrypt(const Napi::CallbackInfo &info);
   Napi::Value _printInfo(const Napi::CallbackInfo &info);
   Napi::Value _decodeToWaveFile(const Napi::CallbackInfo &info);
+  Napi::Value _decodeToMemorySync(const Napi::CallbackInfo &info);
 };
 
 class HCAAsyncWorker : public Napi::AsyncWorker {
@@ -69,7 +70,8 @@ Napi::Object HCADecoder::init(Napi::Env env, Napi::Object exports) {
     InstanceMethod("printInfo", &HCADecoder::_printInfo),
     // InstanceMethod("decrypt", &HCADecoder::_decrypt),
     InstanceMethod("decodeToWaveFile", &HCADecoder::_decodeToWaveFile),
-    InstanceMethod("decodeToWaveFileSync", &HCADecoder::_decodeToWaveFileSync)
+    InstanceMethod("decodeToWaveFileSync", &HCADecoder::_decodeToWaveFileSync),
+    InstanceMethod("decodeToMemorySync", &HCADecoder::_decodeToMemorySync)
   });
 
   Napi::FunctionReference* constructor = new Napi::FunctionReference();
@@ -255,6 +257,61 @@ Napi::Value HCADecoder::_decodeToWaveFileSync(const Napi::CallbackInfo &info){
   }
 
   return Napi::String::New(env, wav);
+}
+
+void BufferFinalizer(Napi::Env env, void* data, void* hint) {
+  std::vector<uint8_t>* buf = static_cast<std::vector<uint8_t>*>(hint);
+  delete buf;
+}
+
+Napi::Value HCADecoder::_decodeToMemorySync(const Napi::CallbackInfo &info){
+  Napi::Env env = info.Env();
+  size_t argc = info.Length();
+  if (argc < 1) {
+    Napi::Error::New(env, "HCADecoder::decodeToMemorySync(): arguments.length < 1").ThrowAsJavaScriptException();
+    return Napi::String::New(env, "");
+  }
+
+  if (!info[0].IsString()) {
+    Napi::Error::New(env, "HCADecoder::decodeToMemorySync(): typeof arguments[0] !== 'string'").ThrowAsJavaScriptException();
+    return Napi::String::New(env, "");
+  }
+
+  std::string hca = "";
+  double volumn = 1;
+  int mode = 16;
+  int loop = 0;
+
+  int i = 0;
+
+  for (i = 0; i < argc; i++) {
+    switch (i) {
+      case 0:
+        hca = info[i].As<Napi::String>().Utf8Value();
+        break;
+      case 1:
+        if (info[i].IsNumber()) volumn = info[i].As<Napi::Number>().DoubleValue();
+        break;
+      case 2:
+        if (info[i].IsNumber()) mode = info[i].As<Napi::Number>().Int32Value();
+        break;
+      case 3:
+        if (info[i].IsNumber()) loop = info[i].As<Napi::Number>().Int32Value();
+        break;
+      default:
+        break;
+    }
+  }
+  HCAFileStream stream = HCAFileStream::Open();
+  bool res = _hca->DecodeToMemory(hca.c_str(), stream, volumn, mode, loop);
+  if (!res) {
+    Napi::Error::New(env, hca + " decode failed.").ThrowAsJavaScriptException();
+    return Napi::String::New(env, "");
+  }
+
+  std::vector<uint8_t>* buf = stream.Release();
+
+  return Napi::Buffer<uint8_t>::New(env, buf->data(), buf->size(), BufferFinalizer, buf);
 }
 
 Napi::Value HCADecoder::_getInfo(const Napi::CallbackInfo &info) {

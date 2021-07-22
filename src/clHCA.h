@@ -2,6 +2,7 @@
 #define __CL_HCA_H__
 
 #include "HCAInfo.h"
+#include "HCAFileStream.h"
 
 //--------------------------------------------------
 // HCA(High Compression Audio) Class
@@ -26,7 +27,8 @@ public:
 
   // Decode to WAV file
   bool DecodeToWavefile(const char *filenameHCA, const char *filenameWAV, float volume = 1, int mode = 16, int loop = 0);
-  bool DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float volume = 1, int mode = 16, int loop = 0);
+  bool DecodeToMemory(const char *filenameHCA, HCAFileStream& stream, float volume = 1, int mode = 16, int loop = 0);
+  bool DecodeToWavefileStream(void *fpHCA, HCAFileStream& stream, float volume = 1, int mode = 16, int loop = 0);
 
   // Encode to HCA file
   //bool EncodeFromWavefile(const char *filenameWAV,const char *filenameHCA,float volume=1);
@@ -187,12 +189,12 @@ private:
     void Decode5(int index);
   }_channel[0x10];
   bool Decode(void *data, unsigned int size, unsigned int address);
-  bool DecodeToWavefile_Decode(void *fp1, void *fp2, unsigned int address, unsigned int count, void *data, void (*modeFunction)(float, void*));
-  static void DecodeToWavefile_DecodeModeFloat(float f, void *fp);
-  static void DecodeToWavefile_DecodeMode8bit(float f, void *fp);
-  static void DecodeToWavefile_DecodeMode16bit(float f, void *fp);
-  static void DecodeToWavefile_DecodeMode24bit(float f, void *fp);
-  static void DecodeToWavefile_DecodeMode32bit(float f, void *fp);
+  bool DecodeToWavefile_Decode(void *fp1, HCAFileStream&, unsigned int address, unsigned int count, void *data, void (*modeFunction)(float, HCAFileStream&));
+  static void DecodeToWavefile_DecodeModeFloat(float f, HCAFileStream&);
+  static void DecodeToWavefile_DecodeMode8bit(float f, HCAFileStream&);
+  static void DecodeToWavefile_DecodeMode16bit(float f, HCAFileStream&);
+  static void DecodeToWavefile_DecodeMode24bit(float f, HCAFileStream&);
+  static void DecodeToWavefile_DecodeMode32bit(float f, HCAFileStream&);
 };
 
 inline short bswap(short v) { short r = v & 0xFF; r <<= 8; v >>= 8; r |= v & 0xFF; return r; }

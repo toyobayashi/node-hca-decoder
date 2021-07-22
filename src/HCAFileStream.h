@@ -3,31 +3,39 @@
 
 #include <cstdio>
 #include <cstddef>
+#include <cstdint>
+#include <vector>
+#include <memory>
 
 class HCAFileStream {
 public:
+  virtual ~HCAFileStream() noexcept;
   HCAFileStream(FILE* fp);
   HCAFileStream(const HCAFileStream&) = delete;
-  HCAFileStream(HCAFileStream&&) = default;
+  HCAFileStream(HCAFileStream&&);
   HCAFileStream& operator=(const HCAFileStream&) = delete;
-  HCAFileStream& operator=(HCAFileStream&&) = default;
+  HCAFileStream& operator=(HCAFileStream&&);
+
+  explicit operator bool() const noexcept;
 
   int Close();
-  bool Ok() const;
+  bool Ok() const noexcept;
   int Puts(const char* buffer);
+  std::vector<uint8_t>* Release();
   int Seek(long offset, int origin);
   long Tell() const;
   size_t Write(const void *buf, size_t elsize, size_t elcount);
 
+  static HCAFileStream Open();
   static HCAFileStream Open(void* buffer, size_t size);
   static HCAFileStream Open(const char* filepath, const char* flag, unsigned int windows_cp = 65001U);
   static FILE* OpenFile(const char* filepath, const char* flag, unsigned int windows_cp = 65001U);
 private:
-  void* buffer_;
+  std::unique_ptr<std::vector<uint8_t>> buffer_;
   FILE* fp_;
-  size_t size_;
   long offset_;
 
+  HCAFileStream();
   HCAFileStream(void* buffer, size_t size);
 };
 
