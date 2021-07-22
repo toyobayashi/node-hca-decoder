@@ -17,6 +17,12 @@ hca.decodeToWaveFile(filenameHCA/* , filenameWAV, volume, mode, loop, (err, wavF
 hca.decodeToWaveFileSync(filenameHCA/* , filenameWAV, volume, mode, loop */)
 // => boolean
 
+hca.decodeToMemory(filenameHCA/* , volume, mode, loop, (err, buffer) => {} */)
+// => undefined (Async)
+
+hca.decodeToMemorySync(filenameHCA/* , volume, mode, loop */)
+// => Buffer
+
 hca.printInfo(filenameHCA)
 // => undefined
 
