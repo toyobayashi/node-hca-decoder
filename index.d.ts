@@ -1,6 +1,9 @@
-export declare type DecodeCallback = (err: Error | null, wavFilePath: string) => void
+/// <reference types="node" />
 
-export interface HCAInfo {
+export declare type WavDecodeCallback = (err: Error | null, wavFilePath: string) => void
+export declare type MemoryDecodeCallback = (err: Error | null, buffer: Buffer | null) => void
+
+export declare interface HCAInfo {
   version: string
   channelCount: number
   samplingRate: number
@@ -55,6 +58,13 @@ export declare class HCADecoder {
   decodeToWaveFile (filenameHCA: string, filenameWAV: string, volume: number, mode: number, loop: number, callback?: DecodeCallback): void
 
   decodeToWaveFileSync (filenameHCA: string, filenameWAV?: string, volume?: number, mode?: number, loop?: number): string
+
+  decodeToMemory (filenameHCA: string, callback?: MemoryDecodeCallback): void
+  decodeToMemory (filenameHCA: string, volume: number, callback?: MemoryDecodeCallback): void
+  decodeToMemory (filenameHCA: string, volume: number, mode: number, callback?: MemoryDecodeCallback): void
+  decodeToMemory (filenameHCA: string, volume: number, mode: number, loop: number, callback?: MemoryDecodeCallback): void
+
+  decodeToMemorySync (filenameHCA: string, volume?: number, mode?: number, loop?: number): Buffer
 
   printInfo (filenameHCA: string): void
   // decrypt (filenameHCA: string): boolean
