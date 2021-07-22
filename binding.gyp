@@ -10,7 +10,8 @@
         "./src/index.cpp",
         # "./src/hca.cpp",
         "./src/clHCA.cpp",
-        "./src/HCAInfo.cpp"
+        "./src/HCAInfo.cpp",
+        "./src/HCAFileStream.cpp"
       ],
       'includes': [
         './common.gypi'

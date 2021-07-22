@@ -1,13 +1,8 @@
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <Windows.h>
-#endif
-
 #include "clHCA.h"
 #include <stdio.h>
 #include <memory.h>
+
+#include "HCAFileStream.h"
 
 clHCA::clHCA(unsigned int ciphKey1, unsigned int ciphKey2) :
   _ciph_key1(ciphKey1), _ciph_key2(ciphKey2), _ath(), _cipher() {}
@@ -43,20 +38,11 @@ bool clHCA::PrintInfo(const char *filenameHCA) {
 
   if (!(filenameHCA))return false;
 
-  FILE *fp;
-#ifdef _WIN32
-  wchar_t strUnicode[260];
-  MultiByteToWideChar(CP_UTF8, 0, filenameHCA, -1, strUnicode, 260);
-  if (!(fp = _wfopen(strUnicode, L"rb"))) { 
-    printf("Error: Can not open file.\n");
-    return false; 
-  }
-#else
-  if (!(fp = fopen(filenameHCA, "rb"))) {
+  FILE *fp = HCAFileStream::OpenFile(filenameHCA, "rb");
+  if (!fp) {
     printf("Error: Can not open file.\n");
     return false;
   }
-#endif
 
   stHeader header;
   memset(&header, 0, sizeof(header));
@@ -290,14 +276,8 @@ bool clHCA::Decrypt(const char *filenameHCA) {
 
   if (!(filenameHCA))return false;
 
-  FILE *fp;
-#ifdef _WIN32
-  wchar_t strUnicode[260];
-  MultiByteToWideChar(CP_UTF8, 0, filenameHCA, -1, strUnicode, 260);
-  if (!(fp = _wfopen(strUnicode, L"r+b"))) return false;
-#else
-  if (!(fp = fopen(filenameHCA, "r+b")))return false;
-#endif
+  FILE *fp = HCAFileStream::OpenFile(filenameHCA, "r+b");
+  if (!fp) return false;
 
   stHeader header;
   memset(&header, 0, sizeof(header));
@@ -432,14 +412,8 @@ bool clHCA::Decrypt(const char *filenameHCA) {
 bool clHCA::DecodeToWavefile(const char *filenameHCA, const char *filenameWAV, float volume, int mode, int loop) {
   if (!(filenameHCA))return false;
 
-  FILE *fp;
-#ifdef _WIN32
-  wchar_t strUnicode[260];
-  MultiByteToWideChar(CP_UTF8, 0, filenameHCA, -1, strUnicode, 260);
-  if (!(fp = _wfopen(strUnicode, L"rb"))) return false;
-#else
-  if (!(fp = fopen(filenameHCA, "rb")))return false;
-#endif
+  FILE *fp = HCAFileStream::OpenFile(filenameHCA, "rb");
+  if (!fp) return false;
 
   if (!DecodeToWavefileStream(fp, filenameWAV, volume, mode, loop)) { fclose(fp); return false; }
 
@@ -466,14 +440,8 @@ bool clHCA::DecodeToWavefileStream(void *fpHCA, const char *filenameWAV, float v
   fread(data1, header.dataOffset, 1, fp1);
   if (!Decode(data1, header.dataOffset, 0)) { delete[] data1; return false; }
 
-  FILE *fp2;
-#ifdef _WIN32
-  wchar_t strUnicode[260];
-  MultiByteToWideChar(CP_UTF8, 0, filenameWAV, -1, strUnicode, 260);
-  if (!(fp2 = _wfopen(strUnicode, L"wb"))) { delete[] data1; return false; }
-#else
-  if (!(fp2 = fopen(filenameWAV, "wb"))) { delete[] data1; return false; }
-#endif
+  FILE *fp2 = HCAFileStream::OpenFile(filenameWAV, "wb");
+  if (!fp2) { delete[] data1; return false; }
 
   struct stWAVEHeader {
     char riff[4];
